@@ -1,0 +1,22 @@
+syntax: regexp
+^\.gradle$
+^\.settings$
+^bin$
+^build$
+^\.classpath$
+^\.project$
+^\.idea
+^out$
+^\.iml
+^\.log$
+^\.class$
+^\.orig
+
+syntax: glob
+*.jar
+*.log*
+.classpath
+.project
+*.iml
+*.orig
+*.eml
