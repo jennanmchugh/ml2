@@ -135,6 +135,25 @@ public class GeneticAlgorithm {
     }
 
     /**
+     * Simple method to generate a new sequence from mutation/bit-flip operation on input sequence.
+     * @param sequence The sequence we want to mutate.
+     * @return new sequence string with one "bit"/acid flipped from h->p or p->h
+     */
+    private static String mutation(String sequence) {
+        char[] acids = sequence.toCharArray();
+        //choose random index from string to flip bit
+        int index = new Random().nextInt(sequence.length());
+        //make a stringbuilder from sequence string
+        StringBuilder sb = new StringBuilder(sequence);
+        //bit flip operation
+        char c = (acids[index]=='h') ? ('p') : ('h');
+        //changes the character at the random index
+        sb.setCharAt(index, c);
+
+        return sb.toString();
+    }
+
+    /**
      * Used for the self avoiding walk. This determines the new location of the acid by taking the previous location and adding it to the previous direction.
      * @param p1 Previous point position.
      * @param p2 Previous location's noted direction.
