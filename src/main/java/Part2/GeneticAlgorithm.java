@@ -5,10 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created on 02/20/18 by Jenna McHugh.
@@ -64,15 +62,13 @@ public class GeneticAlgorithm {
      * @param protein the sequence we are drawing a structure from.
      */
     private static void selfAvoidingWalk(Protein protein) {
-        HashMap<String, Point> graph = new HashMap<>();
-        Set<Point> coords = new HashSet<>();
+        List<Move> moves = new ArrayList<>();
 
-        //we always start at the origin (0,0)
-        coords.add(new Point(0, 0));
-        graph.put(protein.getSequence().get(0).getLetter(), new Point(0, 0));
-        //we always place the second char at (1,0)
-        coords.add(new Point(1, 0));
-        graph.put(protein.getSequence().get(1).getLetter(), new Point(1, 0));
+        //we always start at the origin (0,0) & move Right.
+        moves.add(new Move(protein.getSequence().get(0).getLetter(), new Point(0, 0), Direction.RIGHT));
+
+        //we always place the second char at (1,0) but need to figure out where to move next. Choose randomly from UP, RIGHT, DOWN.
+        moves.add(new Move(protein.getSequence().get(1).getLetter(), addPoints(moves.get(0).getPosition(), moves.get(0).getDirection().getPoint()), Direction.UP));
 
         //start i counter at 2 since we have already set the values for positions 0 & 1.
         for (int i = 2; i < protein.getSequence().size(); i++) {
@@ -112,5 +108,39 @@ public class GeneticAlgorithm {
 
             }
         }
+    }
+
+    /**
+     * Simple method to generate two new sequences from crossover operation on two input sequences.
+     * @param sequence1
+     * @param sequence2
+     */
+    private static void crossOver(String sequence1, String sequence2) {
+        logger.info("Sequence 1 = " + sequence1);
+        logger.info("Sequence 2 = " + sequence2);
+        //choose a random position in the string as the crossover point
+        int crossOverPoint = new Random().nextInt(sequence1.length());
+
+        String seq1FirstHalf = sequence1.substring(0, crossOverPoint);
+        String seq1SecondHalf = sequence1.substring(crossOverPoint, sequence1.length());
+        String seq2FirstHalf = sequence2.substring(0, crossOverPoint);
+        String seq2SecondHalf = sequence2.substring(crossOverPoint, sequence2.length());
+
+        //build crossover strings based on two halves of the sequence strings
+        String crossover1 = new StringBuilder().append(seq1FirstHalf).append(seq2SecondHalf).toString();
+        String crossover2 = new StringBuilder().append(seq2FirstHalf).append(seq1SecondHalf).toString();
+
+        logger.info("crossover 1 = " + crossover1);
+        logger.info("crossover 2 = " + crossover2);
+    }
+
+    /**
+     * Used for the self avoiding walk. This determines the new location of the acid by taking the previous location and adding it to the previous direction.
+     * @param p1 Previous point position.
+     * @param p2 Previous location's noted direction.
+     * @return the new Point value after adding the two points together.
+     */
+    private static Point addPoints(Point p1, Point p2) {
+        return new Point((int)(p1.getX() + p2.getX()), (int)(p1.getY() + p2.getY()));
     }
 }
