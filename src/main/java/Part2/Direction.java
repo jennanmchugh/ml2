@@ -18,4 +18,6 @@ public enum Direction {
     Direction(Point point) { this.point = point; }
 
     public Point getPoint() { return point; }
+
+
 }

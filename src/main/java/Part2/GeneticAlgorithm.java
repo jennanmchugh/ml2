@@ -13,6 +13,8 @@ import java.util.List;
  */
 public class GeneticAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
+    private static List<Move> moves = new ArrayList<>();
+    private static List<Point> visited = new ArrayList<>();
     private static final float CROSSOVER_RATE = 0.85f;
     private static final float MUTATION_RATE = 0.025f;
     private static final float ELITE_RATE = 0.075f;
@@ -20,11 +22,11 @@ public class GeneticAlgorithm {
     public static void main(String[] args) {
         initPopulation();
     }
-    //1. initialize population
+    //1. initialize population -- DONE
 
     //2. compute fitness of population 1 for all chromosomes
 
-    //3. bubbleSortPopulation
+    //3. bubbleSortPopulation -- DONE
 
     //4. exit condition: does fitness = -42? if yes, you're done
 
@@ -49,11 +51,12 @@ public class GeneticAlgorithm {
         ProteinParser parser = new ProteinParser(new File("src/main/resources/Input.txt"));
         List<Protein> proteins = parser.getProteins();
 
-        //use the 4th protein as example to test
+        //Just using the 4th sequence for now.
         Protein p = proteins.get(4);
         logger.debug("Initial protein input");
-        logger.debug("Sequence = " + p.getFormattedSequenceString(p.getSequence()) + " | Fitness = " + p.getFitness());
+        logger.debug("Sequence = " + p.getFormattedSequenceString(p.getSequence()) + " | Fitness = -" + p.getFitness());
         selfAvoidingWalk(p);
+        computeFitness(moves);
     }
 
     /**
@@ -62,22 +65,54 @@ public class GeneticAlgorithm {
      * @param protein the sequence we are drawing a structure from.
      */
     private static void selfAvoidingWalk(Protein protein) {
-        List<Move> moves = new ArrayList<>();
+        //we always start at the origin (0,0)
+        moves.add(new Move(protein.getSequence().get(0).getLetter(), new Point(0, 0)));
+        visited.add(new Point(0, 0));
 
-        //we always start at the origin (0,0) & move Right.
-        moves.add(new Move(protein.getSequence().get(0).getLetter(), new Point(0, 0), Direction.RIGHT));
-
-        //we always place the second char at (1,0) but need to figure out where to move next. Choose randomly from UP, RIGHT, DOWN.
-        moves.add(new Move(protein.getSequence().get(1).getLetter(), addPoints(moves.get(0).getPosition(), moves.get(0).getDirection().getPoint()), Direction.UP));
+        //we always place the second at (1,0)
+        moves.add(new Move(protein.getSequence().get(1).getLetter(), new Point(1, 0)));
+        visited.add(new Point(1, 0));
 
         //start i counter at 2 since we have already set the values for positions 0 & 1.
         for (int i = 2; i < protein.getSequence().size(); i++) {
-
+            randomOrientation(i, protein.getSequence().get(i).getLetter());
         }
 
-        //now we self avoid... meaning our choice of direction for Step #3 is either Direction.UP, Direction.RIGHT, Direction.DOWN...
+        logger.info("Moves: ");
+        for (Move m : moves) {
+            logger.info(m.getAminoAcid() + " (" + m.getPosition().getX() + "," + m.getPosition().getY() + ")");
+        }
 
+    }
 
+    private static void randomOrientation(int moveNum, String acid) {
+        //check prev position
+        Point prev = moves.get(moveNum-1).getPosition();
+
+        //all adjacent points to the previous point.
+        List<Point> possibleMoves = new ArrayList<>();
+        Point nextRight = addPoints(prev, Direction.RIGHT.getPoint());
+        Point nextLeft = addPoints(prev, Direction.LEFT.getPoint());
+        Point nextUp = addPoints(prev, Direction.UP.getPoint());
+        Point nextDown = addPoints(prev, Direction.DOWN.getPoint());
+        possibleMoves.add(nextRight);
+        possibleMoves.add(nextLeft);
+        possibleMoves.add(nextUp);
+        possibleMoves.add(nextDown);
+
+        //if any of those points were visited previously, remove them as a possible move.
+        for (Iterator<Point> it = possibleMoves.iterator(); it.hasNext(); ) {
+            Point p = it.next();
+            if(visited.contains(p)) {
+                it.remove();
+            }
+        }
+
+        //choose a random point from the possible list, and go with it
+        Random random = new Random();
+        Point randomPt = possibleMoves.get(random.nextInt(possibleMoves.size()));
+        moves.add(new Move(acid, randomPt));
+        visited.add(randomPt);
     }
 
     /**
@@ -85,7 +120,22 @@ public class GeneticAlgorithm {
      * H's are not already covalently bonded or sequentially connected within the sequence.
      * @return fitness value.
      */
-    private int computeFitness() {
+    private static int computeFitness(List<Move> structure) {
+        //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic moves from the structure.
+
+        List<Point> hydrophobicNodes = new ArrayList<>();
+        Iterator<Move> iterator = structure.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getAminoAcid().equalsIgnoreCase("p")) {
+                iterator.remove();
+            }
+            else {
+                hydrophobicNodes.add(iterator.next().getPosition());
+            }
+        }
+
+
+
         return 0;
     }
 
@@ -116,8 +166,10 @@ public class GeneticAlgorithm {
      * @param sequence2
      */
     private static void crossOver(String sequence1, String sequence2) {
-        logger.info("Sequence 1 = " + sequence1);
-        logger.info("Sequence 2 = " + sequence2);
+        logger.info("Crossover operation results");
+        logger.info("---------------------------");
+        logger.info("Input sequence 1 = " + sequence1);
+        logger.info("Input sequence 2 = " + sequence2);
         //choose a random position in the string as the crossover point
         int crossOverPoint = new Random().nextInt(sequence1.length());
 
@@ -140,6 +192,9 @@ public class GeneticAlgorithm {
      * @return new sequence string with one "bit"/acid flipped from h->p or p->h
      */
     private static String mutation(String sequence) {
+        logger.info("Mutation operation results");
+        logger.info("--------------------------");
+        logger.info("Input sequence = " + sequence);
         char[] acids = sequence.toCharArray();
         //choose random index from string to flip bit
         int index = new Random().nextInt(sequence.length());
@@ -149,6 +204,7 @@ public class GeneticAlgorithm {
         char c = (acids[index]=='h') ? ('p') : ('h');
         //changes the character at the random index
         sb.setCharAt(index, c);
+        logger.info("Mutation result = " + sb.toString());
 
         return sb.toString();
     }

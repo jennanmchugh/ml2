@@ -6,7 +6,6 @@ public class Move {
 
     private String aminoAcid;
     private Point position;
-    private Direction direction;
 
     public Point getPosition() {
         return position;
@@ -24,17 +23,9 @@ public class Move {
         this.aminoAcid = aminoAcid;
     }
 
-    public Direction getDirection() {
-        return direction;
-    }
 
-    public void setDirection(Direction direction) {
-        this.direction = direction;
-    }
-
-    public Move(String aminoAcid, Point position, Direction direction) {
+    public Move(String aminoAcid, Point position) {
         this.aminoAcid = aminoAcid;
         this.position = position;
-        this.direction = direction;
     }
 }
