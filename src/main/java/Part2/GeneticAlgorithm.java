@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class GeneticAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
-    private static List<Move> moves = new ArrayList<>();
+    private static List<StructureNode> structureNodes = new ArrayList<>();
     private static List<Point> visited = new ArrayList<>();
     private static final float CROSSOVER_RATE = 0.85f;
     private static final float MUTATION_RATE = 0.025f;
@@ -24,7 +24,7 @@ public class GeneticAlgorithm {
     }
     //1. initialize population -- DONE
 
-    //2. compute fitness of population 1 for all chromosomes
+    //2. compute fitness of population 1 for all chromosomes -- i think it's done.
 
     //3. bubbleSortPopulation -- DONE
 
@@ -56,21 +56,21 @@ public class GeneticAlgorithm {
         logger.debug("Initial protein input");
         logger.debug("Sequence = " + p.getFormattedSequenceString(p.getSequence()) + " | Fitness = -" + p.getFitness());
         selfAvoidingWalk(p);
-        computeFitness(moves);
+        computeFitness(structureNodes, p.getFormattedSequenceString(p.getSequence()));
     }
 
     /**
-     * This method implements the self avoiding walk. It always chooses (0,0) as position 1, and (1,0) as position 2. From then on, the next moves are
-     * chosen randomly based on available directions. Fails/ structure deemed invalid if there are no more available moves.
+     * This method implements the self avoiding walk. It always chooses (0,0) as position 1, and (1,0) as position 2. From then on, the next structureNodes are
+     * chosen randomly based on available directions. Fails/ structure deemed invalid if there are no more available structureNodes.
      * @param protein the sequence we are drawing a structure from.
      */
     private static void selfAvoidingWalk(Protein protein) {
         //we always start at the origin (0,0)
-        moves.add(new Move(protein.getSequence().get(0).getLetter(), new Point(0, 0)));
+        structureNodes.add(new StructureNode(protein.getSequence().get(0).getLetter(), new Point(0, 0)));
         visited.add(new Point(0, 0));
 
         //we always place the second at (1,0)
-        moves.add(new Move(protein.getSequence().get(1).getLetter(), new Point(1, 0)));
+        structureNodes.add(new StructureNode(protein.getSequence().get(1).getLetter(), new Point(1, 0)));
         visited.add(new Point(1, 0));
 
         //start i counter at 2 since we have already set the values for positions 0 & 1.
@@ -79,7 +79,7 @@ public class GeneticAlgorithm {
         }
 
         logger.info("Moves: ");
-        for (Move m : moves) {
+        for (StructureNode m : structureNodes) {
             logger.info(m.getAminoAcid() + " (" + m.getPosition().getX() + "," + m.getPosition().getY() + ")");
         }
 
@@ -87,7 +87,7 @@ public class GeneticAlgorithm {
 
     private static void randomOrientation(int moveNum, String acid) {
         //check prev position
-        Point prev = moves.get(moveNum-1).getPosition();
+        Point prev = structureNodes.get(moveNum-1).getPosition();
 
         //all adjacent points to the previous point.
         List<Point> possibleMoves = new ArrayList<>();
@@ -111,32 +111,47 @@ public class GeneticAlgorithm {
         //choose a random point from the possible list, and go with it
         Random random = new Random();
         Point randomPt = possibleMoves.get(random.nextInt(possibleMoves.size()));
-        moves.add(new Move(acid, randomPt));
+        structureNodes.add(new StructureNode(acid, randomPt));
         visited.add(randomPt);
     }
 
     /**
-     * Computes fitness value of structure. This number is also known as "topological neighbors" (TN): the number of neighboring H-H contacts where the
+     * Computes fitness value of structureNode. This number is also known as "topological neighbors" (TN): the number of neighboring H-H contacts where the
      * H's are not already covalently bonded or sequentially connected within the sequence.
      * @return fitness value.
      */
-    private static int computeFitness(List<Move> structure) {
-        //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic moves from the structure.
-
-        List<Point> hydrophobicNodes = new ArrayList<>();
-        Iterator<Move> iterator = structure.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getAminoAcid().equalsIgnoreCase("p")) {
-                iterator.remove();
-            }
-            else {
-                hydrophobicNodes.add(iterator.next().getPosition());
+    private static int computeFitness(List<StructureNode> structureNodes, String sequence) {
+        int fitness = 0;
+        //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
+        List<StructureNode> hydrophobics = new ArrayList<>();
+        for (StructureNode n : structureNodes) {
+            if (n.getAminoAcid().equalsIgnoreCase("h")) {
+                hydrophobics.add(n);
             }
         }
 
+        for (int i = 0; i < structureNodes.size()-1; i++) {
+            if (structureNodes.get(i).getAminoAcid().equalsIgnoreCase("h") && structureNodes.get(i+1).getAminoAcid().equalsIgnoreCase("h")) {
+                //if hydrophobics are sequentially connected, remove them. these don't count for TN's.
+                hydrophobics.remove(structureNodes.get(i));
+                hydrophobics.remove(structureNodes.get(i+1));
+            }
+        }
 
+        logger.info("The remaining hydrophobics (sorted by increasing x-values) are...");
+        Collections.sort(hydrophobics);
+        for (int i = 0; i < hydrophobics.size()-1; i++) {
+            logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
+            Point curr = hydrophobics.get(i).getPosition();
+            Point next = hydrophobics.get(i+1).getPosition();
+            if (curr.distance(next) == 1) {
+                //ladies and gentlemen... we have a topological neighbor
+                //...i think.
+                fitness++;
+            }
+        }
 
-        return 0;
+        return fitness;
     }
 
     /**

@@ -2,7 +2,7 @@ package Part2;
 
 import java.awt.*;
 
-public class Move {
+public class StructureNode implements Comparable<StructureNode> {
 
     private String aminoAcid;
     private Point position;
@@ -24,8 +24,14 @@ public class Move {
     }
 
 
-    public Move(String aminoAcid, Point position) {
+    public StructureNode(String aminoAcid, Point position) {
         this.aminoAcid = aminoAcid;
         this.position = position;
+    }
+
+    //override the "compareTo" method to sort the points by their x-values.
+    @Override
+    public int compareTo(StructureNode structureNode) {
+        return Integer.compare((int)this.position.getX(), (int)structureNode.getPosition().getX());
     }
 }
