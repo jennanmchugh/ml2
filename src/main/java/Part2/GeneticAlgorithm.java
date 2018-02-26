@@ -161,24 +161,15 @@ public class GeneticAlgorithm  {
                     hydrophobics.add(n);
                 }
             }
-
-            for (int i = 0; i < s.getNodes().size()-1; i++) {
-                if (s.getNodes().get(i).getAminoAcid().equalsIgnoreCase("h") && s.getNodes().get(i+1).getAminoAcid().equalsIgnoreCase("h")) {
-                    //if hydrophobics are sequentially connected, remove them. these don't count for TN's.
-                    hydrophobics.remove(s.getNodes().get(i));
-                    hydrophobics.remove(s.getNodes().get(i+1));
-                }
-            }
-
             Collections.sort(hydrophobics);
             List<Pair<Point, Point>> fitnessBonds = new ArrayList<>();
             for (int i = 0; i < hydrophobics.size()-1; i++) {
                 logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
                 Point curr = hydrophobics.get(i).getPosition();
+                int currIndex = s.getNodes().indexOf(new StructureNode("h", curr));
                 Point next = hydrophobics.get(i+1).getPosition();
-                if (curr.distance(next) == 1) {
-                    //ladies and gentlemen... we have a topological neighbor
-                    //...i think.
+                int nextIndex = s.getNodes().indexOf(new StructureNode("h", next));
+                if (curr.distance(next) == 1 && (Math.abs(nextIndex - currIndex)  != 1)) {
                     fitnessBonds.add(new Pair<>(curr, next));
                     fitness++;
                 }
