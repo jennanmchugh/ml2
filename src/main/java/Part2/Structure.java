@@ -1,11 +1,13 @@
 package Part2;
 
+import java.awt.*;
 import java.util.List;
 
 public class Structure implements Comparable<Structure> {
     private String sequence;
     private int fitness;
     private List<StructureNode> nodes;
+    private List<Point> visitedPoints;
 
 
     public String getSequence() {
@@ -32,10 +34,15 @@ public class Structure implements Comparable<Structure> {
         this.nodes = nodes;
     }
 
-    public Structure(String sequence, int fitness, List<StructureNode> nodes) {
+    public List<Point> getVisitedPoints() { return visitedPoints; }
+
+    public void setVisitedPoints(List<Point> visitedPoints) { this.visitedPoints = visitedPoints; }
+
+    public Structure(String sequence, int fitness, List<StructureNode> nodes, List<Point> visitedPoints) {
         this.sequence = sequence;
         this.fitness = fitness;
         this.nodes = nodes;
+        this.visitedPoints = visitedPoints;
     }
 
     @Override

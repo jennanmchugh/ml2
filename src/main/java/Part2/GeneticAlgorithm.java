@@ -13,8 +13,7 @@ import java.util.List;
  */
 public class GeneticAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
-    private static List<StructureNode> structureNodes = new ArrayList<>();
-    private static List<Point> visited = new ArrayList<>();
+    private static List<Structure> population = new ArrayList<>();
     private static final float CROSSOVER_RATE = 0.85f;
     private static final float MUTATION_RATE = 0.025f;
     private static final float ELITE_RATE = 0.075f;
@@ -55,8 +54,11 @@ public class GeneticAlgorithm {
         Protein p = proteins.get(4);
         logger.debug("Initial protein input");
         logger.debug("Sequence = " + p.getFormattedSequenceString(p.getSequence()) + " | Fitness = -" + p.getFitness());
-        selfAvoidingWalk(p);
-        computeFitness(structureNodes, p.getFormattedSequenceString(p.getSequence()));
+        for (int i = 0; i < 200; i++) {
+            population.add(selfAvoidingWalk(p));
+        }
+        computeFitness(population, p.getFormattedSequenceString(p.getSequence()));
+        logger.info("we made it");
     }
 
     /**
@@ -64,94 +66,111 @@ public class GeneticAlgorithm {
      * chosen randomly based on available directions. Fails/ structure deemed invalid if there are no more available structureNodes.
      * @param protein the sequence we are drawing a structure from.
      */
-    private static void selfAvoidingWalk(Protein protein) {
+    private static Structure selfAvoidingWalk(Protein protein) {
+        List<Point> visited = new ArrayList<>();
+        List<StructureNode> nodes = new ArrayList<>();
         //we always start at the origin (0,0)
-        structureNodes.add(new StructureNode(protein.getSequence().get(0).getLetter(), new Point(0, 0)));
+        nodes.add(new StructureNode(protein.getSequence().get(0).getLetter(), new Point(0, 0)));
         visited.add(new Point(0, 0));
 
         //we always place the second at (1,0)
-        structureNodes.add(new StructureNode(protein.getSequence().get(1).getLetter(), new Point(1, 0)));
+        nodes.add(new StructureNode(protein.getSequence().get(1).getLetter(), new Point(1, 0)));
         visited.add(new Point(1, 0));
 
         //start i counter at 2 since we have already set the values for positions 0 & 1.
         for (int i = 2; i < protein.getSequence().size(); i++) {
-            randomOrientation(i, protein.getSequence().get(i).getLetter());
+            logger.debug("Move number = " + i);
+            logger.debug("Sequence size = " + protein.getSequence().size());
+            logger.debug("Node size = " + nodes.size());
+            randomOrientation(i, protein.getSequence().get(i).getLetter(), nodes, visited);
         }
 
         logger.info("Moves: ");
-        for (StructureNode m : structureNodes) {
-            logger.info(m.getAminoAcid() + " (" + m.getPosition().getX() + "," + m.getPosition().getY() + ")");
+        for (StructureNode n : nodes) {
+            logger.info(n.getAminoAcid() + " (" + n.getPosition().getX() + "," + n.getPosition().getY() + ")");
         }
 
+        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), 0, nodes, visited);
     }
 
-    private static void randomOrientation(int moveNum, String acid) {
+    private static void randomOrientation(int moveNum, String acid, List<StructureNode> nodes, List<Point> visited) {
         //check prev position
-        Point prev = structureNodes.get(moveNum-1).getPosition();
+        Point curr = nodes.get(nodes.size()-1).getPosition();
 
         //all adjacent points to the previous point.
         List<Point> possibleMoves = new ArrayList<>();
-        Point nextRight = addPoints(prev, Direction.RIGHT.getPoint());
-        Point nextLeft = addPoints(prev, Direction.LEFT.getPoint());
-        Point nextUp = addPoints(prev, Direction.UP.getPoint());
-        Point nextDown = addPoints(prev, Direction.DOWN.getPoint());
-        possibleMoves.add(nextRight);
-        possibleMoves.add(nextLeft);
-        possibleMoves.add(nextUp);
-        possibleMoves.add(nextDown);
+        Point nextRight = addPoints(curr, Direction.RIGHT.getPoint());
+        Point nextLeft = addPoints(curr, Direction.LEFT.getPoint());
+        Point nextUp = addPoints(curr, Direction.UP.getPoint());
+        Point nextDown = addPoints(curr, Direction.DOWN.getPoint());
+        if (!visited.contains(nextRight)) { possibleMoves.add(nextRight); }
+        if (!visited.contains(nextLeft)) { possibleMoves.add(nextLeft); }
+        if (!visited.contains(nextUp)) { possibleMoves.add(nextUp); }
+        if (!visited.contains(nextDown)) { possibleMoves.add(nextDown); }
 
-        //if any of those points were visited previously, remove them as a possible move.
-        for (Iterator<Point> it = possibleMoves.iterator(); it.hasNext(); ) {
-            Point p = it.next();
-            if(visited.contains(p)) {
-                it.remove();
-            }
+
+        while (possibleMoves.size() == 0) {
+            //keep trying until you find a possible move. this means backtracking to the previous point and erasing the current. choose a random point from the previous point again,
+            //as long as it's not the same random point.
+            //make sure to update current point/ if node size changes, then curr position also needs to be updated.
+            Point current = nodes.get(nodes.size()-1).getPosition();
+            visited.remove(current);
+            boolean removed = nodes.removeIf(n -> n.getPosition().equals(current));
+            Point prev = nodes.get(nodes.size()-2).getPosition();
+            Point right = addPoints(prev, Direction.RIGHT.getPoint());
+            Point left = addPoints(prev, Direction.LEFT.getPoint());
+            Point up = addPoints(prev, Direction.UP.getPoint());
+            Point down = addPoints(prev, Direction.DOWN.getPoint());
+            if ( right.getX() != curr.getX() && right.getY() != curr.getY() && !visited.contains(right)) { possibleMoves.add(right); }
+            if (left.getX() != curr.getX() && left.getY() != curr.getY() && !visited.contains(left)) { possibleMoves.add(left); }
+            if (up.getX() != curr.getX() && up.getY() != curr.getY() && !visited.contains(up)) { possibleMoves.add(up); }
+            if (down.getX() != curr.getX() && down.getY() != curr.getY() && !visited.contains(down)) { possibleMoves.add(down); }
         }
 
-        //choose a random point from the possible list, and go with it
-        Random random = new Random();
-        Point randomPt = possibleMoves.get(random.nextInt(possibleMoves.size()));
-        structureNodes.add(new StructureNode(acid, randomPt));
-        visited.add(randomPt);
+        Point next = possibleMoves.get(new Random().nextInt(possibleMoves.size()));
+        nodes.add(new StructureNode(acid, next));
+        visited.add(next);
     }
+
 
     /**
      * Computes fitness value of structureNode. This number is also known as "topological neighbors" (TN): the number of neighboring H-H contacts where the
      * H's are not already covalently bonded or sequentially connected within the sequence.
-     * @return fitness value.
      */
-    private static int computeFitness(List<StructureNode> structureNodes, String sequence) {
-        int fitness = 0;
-        //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
-        List<StructureNode> hydrophobics = new ArrayList<>();
-        for (StructureNode n : structureNodes) {
-            if (n.getAminoAcid().equalsIgnoreCase("h")) {
-                hydrophobics.add(n);
+    private static void computeFitness(List<Structure> population, String sequence) {
+        for (Structure s : population) {
+            int fitness = 0;
+            //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
+            List<StructureNode> hydrophobics = new ArrayList<>();
+            for (StructureNode n : s.getNodes()) {
+                if (n.getAminoAcid().equalsIgnoreCase("h")) {
+                    hydrophobics.add(n);
+                }
             }
-        }
 
-        for (int i = 0; i < structureNodes.size()-1; i++) {
-            if (structureNodes.get(i).getAminoAcid().equalsIgnoreCase("h") && structureNodes.get(i+1).getAminoAcid().equalsIgnoreCase("h")) {
-                //if hydrophobics are sequentially connected, remove them. these don't count for TN's.
-                hydrophobics.remove(structureNodes.get(i));
-                hydrophobics.remove(structureNodes.get(i+1));
+            for (int i = 0; i < s.getNodes().size()-1; i++) {
+                if (s.getNodes().get(i).getAminoAcid().equalsIgnoreCase("h") && s.getNodes().get(i+1).getAminoAcid().equalsIgnoreCase("h")) {
+                    //if hydrophobics are sequentially connected, remove them. these don't count for TN's.
+                    hydrophobics.remove(s.getNodes().get(i));
+                    hydrophobics.remove(s.getNodes().get(i+1));
+                }
             }
-        }
 
-        logger.info("The remaining hydrophobics (sorted by increasing x-values) are...");
-        Collections.sort(hydrophobics);
-        for (int i = 0; i < hydrophobics.size()-1; i++) {
-            logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
-            Point curr = hydrophobics.get(i).getPosition();
-            Point next = hydrophobics.get(i+1).getPosition();
-            if (curr.distance(next) == 1) {
-                //ladies and gentlemen... we have a topological neighbor
-                //...i think.
-                fitness++;
+            logger.info("The remaining hydrophobics (sorted by increasing x-values) are...");
+            Collections.sort(hydrophobics);
+            for (int i = 0; i < hydrophobics.size()-1; i++) {
+                logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
+                Point curr = hydrophobics.get(i).getPosition();
+                Point next = hydrophobics.get(i+1).getPosition();
+                if (curr.distance(next) == 1) {
+                    //ladies and gentlemen... we have a topological neighbor
+                    //...i think.
+                    fitness++;
+                }
             }
-        }
 
-        return fitness;
+            s.setFitness(fitness);
+        }
     }
 
     /**
@@ -177,8 +196,8 @@ public class GeneticAlgorithm {
 
     /**
      * Simple method to generate two new sequences from crossover operation on two input sequences.
-     * @param sequence1
-     * @param sequence2
+     * @param sequence1 1st sequence string
+     * @param sequence2 2nd sequence string
      */
     private static void crossOver(String sequence1, String sequence2) {
         logger.info("Crossover operation results");
