@@ -1,11 +1,14 @@
 package Part2;
 
+import javafx.util.Pair;
+
 import java.awt.*;
 import java.util.List;
 
 public class Structure implements Comparable<Structure> {
     private String sequence;
     private int fitness;
+    private List<Pair<Point, Point>> fitnessBond;
     private List<StructureNode> nodes;
     private List<Point> visitedPoints;
 
@@ -37,6 +40,10 @@ public class Structure implements Comparable<Structure> {
     public List<Point> getVisitedPoints() { return visitedPoints; }
 
     public void setVisitedPoints(List<Point> visitedPoints) { this.visitedPoints = visitedPoints; }
+
+    public List<Pair<Point, Point>> getFitnessBond() { return fitnessBond; }
+
+    public void setFitnessBond(List<Pair<Point, Point>> fitnessBond) { this.fitnessBond = fitnessBond;}
 
     public Structure(String sequence, int fitness, List<StructureNode> nodes, List<Point> visitedPoints) {
         this.sequence = sequence;

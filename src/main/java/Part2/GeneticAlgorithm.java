@@ -1,5 +1,8 @@
 package Part2;
 
+import javafx.application.Application;
+import javafx.stage.Stage;
+import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +14,7 @@ import java.util.List;
 /**
  * Created on 02/20/18 by Jenna McHugh.
  */
-public class GeneticAlgorithm {
+public class GeneticAlgorithm  {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
     private static Population population;
     private static final float CROSSOVER_RATE = 0.85f;
@@ -46,7 +49,7 @@ public class GeneticAlgorithm {
     /**
      * This method will initialize population based on selected input sequence.
      */
-    private static void initPopulation() {
+    public static Structure initPopulation() {
         ProteinParser parser = new ProteinParser(new File("src/main/resources/Input.txt"));
         List<Protein> proteins = parser.getProteins();
 
@@ -63,6 +66,13 @@ public class GeneticAlgorithm {
         computeFitness(population, p.getFormattedSequenceString(p.getSequence()));
         //this Java 8 lambda expression is a one-liner to sort the population by fitness value.
         population.getStructures().sort(Comparator.comparing(Structure::getFitness));
+
+
+        //then, perform the elitism function. (take the last 10 structures bc they have the highest fitness)
+        //do crossover & mutation
+        //the resulting structures will give you a new population
+
+        return population.getStructures().get(population.getStructures().size()-1);
     }
 
     /**
@@ -160,8 +170,8 @@ public class GeneticAlgorithm {
                 }
             }
 
-            logger.info("The remaining hydrophobics (sorted by increasing x-values) are...");
             Collections.sort(hydrophobics);
+            List<Pair<Point, Point>> fitnessBonds = new ArrayList<>();
             for (int i = 0; i < hydrophobics.size()-1; i++) {
                 logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
                 Point curr = hydrophobics.get(i).getPosition();
@@ -169,11 +179,13 @@ public class GeneticAlgorithm {
                 if (curr.distance(next) == 1) {
                     //ladies and gentlemen... we have a topological neighbor
                     //...i think.
+                    fitnessBonds.add(new Pair<>(curr, next));
                     fitness++;
                 }
             }
 
             s.setFitness(fitness);
+            s.setFitnessBond(fitnessBonds);
         }
     }
 
