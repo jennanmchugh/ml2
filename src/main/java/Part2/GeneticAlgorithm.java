@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class GeneticAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
-    private static List<Structure> population = new ArrayList<>();
+    private static Population population;
     private static final float CROSSOVER_RATE = 0.85f;
     private static final float MUTATION_RATE = 0.025f;
     private static final float ELITE_RATE = 0.075f;
@@ -54,11 +54,15 @@ public class GeneticAlgorithm {
         Protein p = proteins.get(4);
         logger.debug("Initial protein input");
         logger.debug("Sequence = " + p.getFormattedSequenceString(p.getSequence()) + " | Fitness = -" + p.getFitness());
+        List<Structure> structures = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
-            population.add(selfAvoidingWalk(p));
+            Structure s = selfAvoidingWalk(p);
+            structures.add(s);
         }
+        population = new Population(structures);
         computeFitness(population, p.getFormattedSequenceString(p.getSequence()));
-        logger.info("we made it");
+        //this Java 8 lambda expression is a one-liner to sort the population by fitness value.
+        population.getStructures().sort(Comparator.comparing(Structure::getFitness));
     }
 
     /**
@@ -137,8 +141,8 @@ public class GeneticAlgorithm {
      * Computes fitness value of structureNode. This number is also known as "topological neighbors" (TN): the number of neighboring H-H contacts where the
      * H's are not already covalently bonded or sequentially connected within the sequence.
      */
-    private static void computeFitness(List<Structure> population, String sequence) {
-        for (Structure s : population) {
+    private static void computeFitness(Population population, String sequence) {
+        for (Structure s : population.getStructures()) {
             int fitness = 0;
             //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
             List<StructureNode> hydrophobics = new ArrayList<>();
@@ -170,27 +174,6 @@ public class GeneticAlgorithm {
             }
 
             s.setFitness(fitness);
-        }
-    }
-
-    /**
-     * This method will use the bubble sort algorithm (modified from www.javatpoint.com/bubble-sort-in-java) to sort the population by fitness.
-     * @param proteins the population we are sorting.
-     */
-    private static void bubbleSortPopulation(List<Protein> proteins) {
-        int n = proteins.size();
-        int temp;
-        Protein[] pArray = (Protein[])proteins.toArray();
-        for (int i = 0; i < n; i++) {
-            for (int j = 1; j < (n - i); j++) {
-                if (pArray[j - 1].getFitness() > pArray[j].getFitness()) {
-                    //swap elements
-                    temp = pArray[j - 1].getFitness();
-                    pArray[j - 1] = pArray[j];
-                    pArray[j].setFitness(temp);
-                }
-
-            }
         }
     }
 
