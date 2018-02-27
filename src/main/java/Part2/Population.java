@@ -1,15 +1,14 @@
 package Part2;
 
-import java.util.List;
 
 public class Population {
-    private List<Structure> structures;
+    private Structure[] structures;
 
-    public List<Structure> getStructures() { return structures; }
+    public Structure[] getStructures() { return structures; }
 
-    public void setStructures(List<Structure> structures) { this.structures = structures; }
+    public void setStructures(Structure[] structures) { this.structures = structures; }
 
-    public Population(List<Structure> structures) {
+    public Population(Structure[] structures) {
         this.structures = structures;
     }
 }

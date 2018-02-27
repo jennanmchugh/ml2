@@ -11,12 +11,12 @@ import java.util.List;
  * Created on 02/20/18 by Jenna McHugh.
  * Simple class that parses the input text file and generates a list of proteins & their maximum possible fitness values from the file. Also uses logging to show the list.
  */
-public class ProteinParser {
+public class ProteinReader {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProteinParser.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProteinReader.class);
     private List<Protein> proteins = new ArrayList<>();
 
-    ProteinParser(File path) {
+    ProteinReader(File path) {
 
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             String sCurrentLine;

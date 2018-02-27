@@ -1,14 +1,12 @@
 package Part2;
 
-import javafx.util.Pair;
 
 import java.awt.*;
 import java.util.List;
 
-public class Structure implements Comparable<Structure> {
+public class Structure implements Comparable<Structure>{
     private String sequence;
-    private int fitness;
-    private List<Pair<Point, Point>> fitnessBond;
+    private Fitness fitness;
     private List<StructureNode> nodes;
     private List<Point> visitedPoints;
 
@@ -21,11 +19,11 @@ public class Structure implements Comparable<Structure> {
         this.sequence = sequence;
     }
 
-    public int getFitness() {
+    public Fitness getFitness() {
         return fitness;
     }
 
-    public void setFitness(int fitness) {
+    public void setFitness(Fitness fitness) {
         this.fitness = fitness;
     }
 
@@ -41,19 +39,18 @@ public class Structure implements Comparable<Structure> {
 
     public void setVisitedPoints(List<Point> visitedPoints) { this.visitedPoints = visitedPoints; }
 
-    public List<Pair<Point, Point>> getFitnessBond() { return fitnessBond; }
 
-    public void setFitnessBond(List<Pair<Point, Point>> fitnessBond) { this.fitnessBond = fitnessBond;}
-
-    public Structure(String sequence, int fitness, List<StructureNode> nodes, List<Point> visitedPoints) {
+    public Structure(String sequence, Fitness fitness, List<StructureNode> nodes, List<Point> visitedPoints) {
         this.sequence = sequence;
         this.fitness = fitness;
         this.nodes = nodes;
         this.visitedPoints = visitedPoints;
     }
 
+    public Structure(String sequence) { this.sequence = sequence; }
+
     @Override
     public int compareTo(Structure other) {
-        return Integer.compare(this.fitness, other.fitness);
+        return Integer.compare(other.fitness.getTotalFitness(), this.fitness.getTotalFitness());
     }
 }

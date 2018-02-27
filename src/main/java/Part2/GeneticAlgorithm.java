@@ -1,8 +1,5 @@
 package Part2;
 
-import javafx.application.Application;
-import javafx.stage.Stage;
-import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,62 +14,72 @@ import java.util.List;
 public class GeneticAlgorithm  {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
     private static Population population;
-    private static final float CROSSOVER_RATE = 0.85f;
-    private static final float MUTATION_RATE = 0.025f;
-    private static final float ELITE_RATE = 0.075f;
+    private static final int MAX_GENERATIONS = 2000;
+
+    private static final int MAX_FITNESS = 9;
 
     public static void main(String[] args) {
-        initPopulation();
+        start();
     }
-    //1. initialize population -- DONE
-
-    //2. compute fitness of population 1 for all chromosomes -- i think it's done.
-
-    //3. bubbleSortPopulation -- DONE
-
-    //4. exit condition: does fitness = -42? if yes, you're done
-
-    //5. elite: choose 10 best chromosomes
-
-    //6. crossover: do 80x to produce 160 chromosomes
-
-    //7. fill the rest of population 2 randomly
-
-    //8. mutation: apply to 10 chromosomes
-
-    //9. pop1 = pop2
-    //   gen++
-
-    //10. go to step 2.
-
 
     /**
      * This method will initialize population based on selected input sequence.
      */
-    public static Structure initPopulation() {
-        ProteinParser parser = new ProteinParser(new File("src/main/resources/Input.txt"));
-        List<Protein> proteins = parser.getProteins();
+    public static List<Structure> start() {
+        ProteinReader reader = new ProteinReader(new File("src/main/resources/Input.txt"));
+        List<Protein> proteins = reader.getProteins();
 
-        //Just using the 4th sequence for now.
+        List<Structure> bestGenStructures = new ArrayList<>();
+
+        Structure[] firstGen = new Structure[200];
+        //our initial input is the 4th index element in the proteins input file.
         Protein p = proteins.get(4);
-        logger.debug("Initial protein input");
-        logger.debug("Sequence = " + p.getFormattedSequenceString(p.getSequence()) + " | Fitness = -" + p.getFitness());
-        List<Structure> structures = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
-            Structure s = selfAvoidingWalk(p);
-            structures.add(s);
+            Structure s = selfAvoidingWalk(proteins.get(4));
+            firstGen[i] = s;
         }
-        population = new Population(structures);
-        computeFitness(population, p.getFormattedSequenceString(p.getSequence()));
-        //this Java 8 lambda expression is a one-liner to sort the population by fitness value.
-        population.getStructures().sort(Comparator.comparing(Structure::getFitness));
+        population = new Population(firstGen);
+        computeFitness(population);
+        Arrays.sort(firstGen);
+        bestGenStructures.add(firstGen[0]);
 
+        Structure[] nextGen = new Structure[200];
+        /*
+        Program stop conditions:
+        1.) is i == MAX_GENERATIONS (2000)?
+        OR
+        2.) is i == the maximum fitness level?
+         */
+        for (int i = 0; i < MAX_GENERATIONS && i < MAX_FITNESS; i++) {
+            //take the 1st 10 elements of Gen. 1 (bc they have the highest fitness value) for elitism.
+            for (int j = 0; j < 10; j++) {
+                nextGen[j] = firstGen[j];
+            }
+            //for structures 10 - 169, we apply the crossover method
+            for (int j = 10; j < 170; j+=2) {
+                //not correct!!! need to apply crossover method after this
+                Structure structure1 = rouletteWheelSelection(firstGen);
+                Structure structure2 = rouletteWheelSelection(firstGen);
+                nextGen[j] = structure1;
+                nextGen[j+1] = structure2;
+            }
+            //apply mutation to the next 10 chromosomes
+            for (int j = 170; j < 180; j++) {
 
-        //then, perform the elitism function. (take the last 10 structures bc they have the highest fitness)
-        //do crossover & mutation
-        //the resulting structures will give you a new population
+            }
+            //choose randomly for the rest of the population
+            for (int j = 180; j < 200; j++) {
 
-        return population.getStructures().get(population.getStructures().size()-1);
+            }
+            population = new Population(nextGen);
+            computeFitness(population);
+            Arrays.sort(nextGen);
+            bestGenStructures.add(nextGen[0]);
+            //let's see if we can make it here without it breaking
+            System.out.println("we made it yall");
+        }
+
+        return bestGenStructures;
     }
 
     /**
@@ -104,9 +111,16 @@ public class GeneticAlgorithm  {
             logger.info(n.getAminoAcid() + " (" + n.getPosition().getX() + "," + n.getPosition().getY() + ")");
         }
 
-        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), 0, nodes, visited);
+        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), new Fitness(0, new HashSet<Point>()), nodes, visited);
     }
 
+    /**
+     * This is where our self-avoiding walk magic is actually happening.
+     * @param moveNum Our index position in the structure
+     * @param acid The letter representing the current acid - H for hydrophobic, P for hydrophilic/polar
+     * @param nodes The structure nodes that have been added so far to the structure
+     * @param visited All the points that have been visited.
+     */
     private static void randomOrientation(int moveNum, String acid, List<StructureNode> nodes, List<Point> visited) {
         //check prev position
         Point curr = nodes.get(nodes.size()-1).getPosition();
@@ -117,16 +131,22 @@ public class GeneticAlgorithm  {
         Point nextLeft = addPoints(curr, Direction.LEFT.getPoint());
         Point nextUp = addPoints(curr, Direction.UP.getPoint());
         Point nextDown = addPoints(curr, Direction.DOWN.getPoint());
+        //if this point hasn't been visited yet, we can add it to our possible moves.
         if (!visited.contains(nextRight)) { possibleMoves.add(nextRight); }
         if (!visited.contains(nextLeft)) { possibleMoves.add(nextLeft); }
         if (!visited.contains(nextUp)) { possibleMoves.add(nextUp); }
         if (!visited.contains(nextDown)) { possibleMoves.add(nextDown); }
 
-
+        /*
+        occasionally we will run into an issue where the points in each direction from the current point have already been visited.
+        if this is the case, we have 0 possible moves. we have to erase our current point from the nodes and the visited points, and go back by one position.
+        we also remove our current point from the list of options.
+        for example:
+            Say our current position (value of Point curr) is (4,0). nextRight (4,1), nextLeft(3,0), nextUp (4,2), and nextDown (4,-1) have all been visited.
+            We have no possible moves. In the while loop, we remove (4,0) from the nodes and visited list. Then we get the point at the previous position and get all points in the same direction.
+            All points that haven't been visited yet & aren't equal to (4,0) are added to the possible moves.
+         */
         while (possibleMoves.size() == 0) {
-            //keep trying until you find a possible move. this means backtracking to the previous point and erasing the current. choose a random point from the previous point again,
-            //as long as it's not the same random point.
-            //make sure to update current point/ if node size changes, then curr position also needs to be updated.
             Point current = nodes.get(nodes.size()-1).getPosition();
             visited.remove(current);
             boolean removed = nodes.removeIf(n -> n.getPosition().equals(current));
@@ -151,7 +171,7 @@ public class GeneticAlgorithm  {
      * Computes fitness value of structureNode. This number is also known as "topological neighbors" (TN): the number of neighboring H-H contacts where the
      * H's are not already covalently bonded or sequentially connected within the sequence.
      */
-    private static void computeFitness(Population population, String sequence) {
+    private static void computeFitness(Population population) {
         for (Structure s : population.getStructures()) {
             int fitness = 0;
             //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
@@ -162,71 +182,23 @@ public class GeneticAlgorithm  {
                 }
             }
             Collections.sort(hydrophobics);
-            List<Pair<Point, Point>> fitnessBonds = new ArrayList<>();
+            HashSet<Point> fitnessBonds = new HashSet<>();
             for (int i = 0; i < hydrophobics.size()-1; i++) {
                 logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
                 Point curr = hydrophobics.get(i).getPosition();
                 int currIndex = s.getNodes().indexOf(new StructureNode("h", curr));
                 Point next = hydrophobics.get(i+1).getPosition();
                 int nextIndex = s.getNodes().indexOf(new StructureNode("h", next));
+                //if the distance between our two Hydrophobic acid points is 1, AND these points aren't sequential in the sequence, we have a topological neighbor.
                 if (curr.distance(next) == 1 && (Math.abs(nextIndex - currIndex)  != 1)) {
-                    fitnessBonds.add(new Pair<>(curr, next));
+                    fitnessBonds.add(curr);
+                    fitnessBonds.add(next);
                     fitness++;
                 }
             }
 
-            s.setFitness(fitness);
-            s.setFitnessBond(fitnessBonds);
+            s.setFitness(new Fitness(fitness, fitnessBonds));
         }
-    }
-
-    /**
-     * Simple method to generate two new sequences from crossover operation on two input sequences.
-     * @param sequence1 1st sequence string
-     * @param sequence2 2nd sequence string
-     */
-    private static void crossOver(String sequence1, String sequence2) {
-        logger.info("Crossover operation results");
-        logger.info("---------------------------");
-        logger.info("Input sequence 1 = " + sequence1);
-        logger.info("Input sequence 2 = " + sequence2);
-        //choose a random position in the string as the crossover point
-        int crossOverPoint = new Random().nextInt(sequence1.length());
-
-        String seq1FirstHalf = sequence1.substring(0, crossOverPoint);
-        String seq1SecondHalf = sequence1.substring(crossOverPoint, sequence1.length());
-        String seq2FirstHalf = sequence2.substring(0, crossOverPoint);
-        String seq2SecondHalf = sequence2.substring(crossOverPoint, sequence2.length());
-
-        //build crossover strings based on two halves of the sequence strings
-        String crossover1 = new StringBuilder().append(seq1FirstHalf).append(seq2SecondHalf).toString();
-        String crossover2 = new StringBuilder().append(seq2FirstHalf).append(seq1SecondHalf).toString();
-
-        logger.info("crossover 1 = " + crossover1);
-        logger.info("crossover 2 = " + crossover2);
-    }
-
-    /**
-     * Simple method to generate a new sequence from mutation/bit-flip operation on input sequence.
-     * @param sequence The sequence we want to mutate.
-     * @return new sequence string with one "bit"/acid flipped from h->p or p->h
-     */
-    private static String mutation(String sequence) {
-        logger.info("Mutation operation results");
-        logger.info("--------------------------");
-        logger.info("Input sequence = " + sequence);
-        char[] acids = sequence.toCharArray();
-        //choose random index from string to flip bit
-        int index = new Random().nextInt(sequence.length());
-        //make a stringbuilder from sequence string
-        StringBuilder sb = new StringBuilder(sequence);
-        //bit flip operation
-        char c = (acids[index]=='h') ? ('p') : ('h');
-        //changes the character at the random index
-        sb.setCharAt(index, c);
-        logger.info("Mutation result = " + sb.toString());
-
-        return sb.toString();
     }
 
     /**
@@ -238,4 +210,36 @@ public class GeneticAlgorithm  {
     private static Point addPoints(Point p1, Point p2) {
         return new Point((int)(p1.getX() + p2.getX()), (int)(p1.getY() + p2.getY()));
     }
+
+    /**
+     * The Roulette wheel selection. Favors structures with a higher fitness level.
+     * @param structures an array of structures
+     * @return a structure based on the roulette wheel selection from a list of structures
+     */
+    private static Structure rouletteWheelSelection(Structure[] structures) {
+        int sum = 0;
+        int partial = 0;
+        for (Structure struct : structures) {
+            sum += struct.getFitness().getTotalFitness();
+        }
+        int bound = new Random().nextInt(sum);
+
+        for (Structure s: structures) {
+            partial += s.getFitness().getTotalFitness();
+            if (partial > bound) {
+                return s;
+            }
+        }
+
+        return null;
+    }
+
+    private static void mutateStructure(Structure structure) {
+
+    }
+
+    private static void crossoverStructures(Structure structure1, Structure structure2) {
+
+    }
+
 }
