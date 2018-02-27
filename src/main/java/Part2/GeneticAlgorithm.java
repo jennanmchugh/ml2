@@ -56,20 +56,18 @@ public class GeneticAlgorithm  {
                 nextGen[j] = firstGen[j];
             }
             //for structures 10 - 169, we apply the crossover method
-            for (int j = 10; j < 170; j+=2) {
-                //not correct!!! need to apply crossover method after this
+            for (int j = 10; j < 170; j++) {
                 Structure structure1 = rouletteWheelSelection(firstGen);
                 Structure structure2 = rouletteWheelSelection(firstGen);
-                nextGen[j] = structure1;
-                nextGen[j+1] = structure2;
+                nextGen[j] = crossOver(structure1, structure2);
             }
             //apply mutation to the next 10 chromosomes
             for (int j = 170; j < 180; j++) {
-
+                //mutate
             }
             //choose randomly for the rest of the population
             for (int j = 180; j < 200; j++) {
-
+                nextGen[j] = firstGen[new Random().nextInt(firstGen.length)];
             }
             population = new Population(nextGen);
             computeFitness(population);
@@ -100,9 +98,6 @@ public class GeneticAlgorithm  {
 
         //start i counter at 2 since we have already set the values for positions 0 & 1.
         for (int i = 2; i < protein.getSequence().size(); i++) {
-            logger.debug("Move number = " + i);
-            logger.debug("Sequence size = " + protein.getSequence().size());
-            logger.debug("Node size = " + nodes.size());
             randomOrientation(i, protein.getSequence().get(i).getLetter(), nodes, visited);
         }
 
@@ -234,12 +229,45 @@ public class GeneticAlgorithm  {
         return null;
     }
 
-    private static void mutateStructure(Structure structure) {
-
+    private static void mutate(Structure structure) {
     }
 
-    private static void crossoverStructures(Structure structure1, Structure structure2) {
+    private static Structure crossOver(Structure structure1, Structure structure2) {
+        Structure s = new Structure();
+        boolean structureValid = false;
+        while (!structureValid) {
+            int randomPosition = new Random().nextInt(structure1.getNodes().size());
 
+            List<StructureNode> nodes = new ArrayList<>();
+            for (int i = 0; i < randomPosition; i++) {
+                nodes.add(structure1.getNodes().get(i));
+            }
+            for (int i = randomPosition; i < structure2.getNodes().size(); i++) {
+                nodes.add(structure2.getNodes().get(i));
+            }
+
+            List<Point> visited = new ArrayList<>();
+            for (StructureNode n : nodes) {
+                visited.add(n.getPosition());
+            }
+            s = new Structure(structure1.getSequence(), new Fitness(0, new HashSet<Point>()), nodes, visited);
+            structureValid = validateStructure(s);
+        }
+
+        logger.debug("WE MADE IT!!!");
+
+        return s;
+    }
+
+    private static boolean validateStructure(Structure structure) {
+        List<StructureNode> nodes = structure.getNodes();
+        for (int i = 0; i < nodes.size()-1; i++) {
+            if (nodes.get(i).getPosition().distance(nodes.get(i+1).getPosition()) != 1) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }

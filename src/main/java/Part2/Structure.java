@@ -49,8 +49,11 @@ public class Structure implements Comparable<Structure>{
 
     public Structure(String sequence) { this.sequence = sequence; }
 
+    public Structure() { }
+
     @Override
     public int compareTo(Structure other) {
+        //comparing with other first will return in descending order, i.e. the list will be sorted by structure fitness values from GREATEST to LEAST.
         return Integer.compare(other.fitness.getTotalFitness(), this.fitness.getTotalFitness());
     }
 }
