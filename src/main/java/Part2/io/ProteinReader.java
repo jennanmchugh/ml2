@@ -1,5 +1,7 @@
-package Part2;
+package Part2.io;
 
+import Part2.models.AminoAcid;
+import Part2.models.Protein;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +18,7 @@ public class ProteinReader {
     private static final Logger logger = LoggerFactory.getLogger(ProteinReader.class);
     private List<Protein> proteins = new ArrayList<>();
 
-    ProteinReader(File path) {
+    public ProteinReader(File path) {
 
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             String sCurrentLine;

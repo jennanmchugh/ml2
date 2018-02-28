@@ -1,5 +1,8 @@
 package Part2;
 
+import Part2.enums.Direction;
+import Part2.io.ProteinReader;
+import Part2.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package Part2;
+package Part2.models;
 
 import java.awt.*;
 import java.util.HashSet;

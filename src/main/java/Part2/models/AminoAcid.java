@@ -1,4 +1,4 @@
-package Part2;
+package Part2.models;
 
 public class AminoAcid {
 
@@ -13,7 +13,7 @@ public class AminoAcid {
         return letter;
     }
 
-    AminoAcid(String letter, boolean isHydrophobic) {
+    public AminoAcid(String letter, boolean isHydrophobic) {
         this.letter = letter;
         this.isHydrophobic = isHydrophobic;
     }

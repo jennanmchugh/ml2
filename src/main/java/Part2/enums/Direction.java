@@ -1,4 +1,4 @@
-package Part2;
+package Part2.enums;
 
 import java.awt.*;
 

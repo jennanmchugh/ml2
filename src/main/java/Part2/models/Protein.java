@@ -1,4 +1,4 @@
-package Part2;
+package Part2.models;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ public class Protein {
     private List<AminoAcid> sequence;
     private int fitness;
 
-    Protein(List<AminoAcid> sequence, int fitness) {
+    public Protein(List<AminoAcid> sequence, int fitness) {
         this.sequence = sequence;
         this.fitness = fitness;
     }

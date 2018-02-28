@@ -1,8 +1,8 @@
 package Part2.fx;
 
 import Part2.GeneticAlgorithm;
-import Part2.Structure;
-import Part2.StructureNode;
+import Part2.models.Structure;
+import Part2.models.StructureNode;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -68,6 +68,16 @@ public class StartProgram extends Application {
                                 point.setStyle("-fx-background-color: rgba(" + rgb + ",1.0);");
                             }
                         }
+                    }
+                }
+                for (int j = 0; j < data.size()-1; j++) {
+                    Double x1 = (double)data.get(j).getXValue();
+                    Double y1 = (double)data.get(j).getYValue();
+                    Point p1 = new Point(x1.intValue(), y1.intValue());
+                    Double x2 = (double)data.get(j+1).getXValue();
+                    Double y2 = (double)data.get(j+1).getYValue();
+                    Point p2 = new Point(x2.intValue(), y2.intValue());
+                    if (genStructures.get(i).getFitness().getPoints().contains(p1) && genStructures.get(i).getFitness().getPoints().contains(p2)) {
                     }
                 }
                 Node line = series.getNode().lookup(".chart-series-line");
