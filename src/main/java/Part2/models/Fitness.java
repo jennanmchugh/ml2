@@ -1,12 +1,13 @@
 package Part2.models;
 
+import javafx.util.Pair;
+
 import java.awt.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 public class Fitness implements Comparable<Fitness> {
     private int totalFitness;
-    private HashSet<Point> points;
+    private List<Pair<Point, Point>> points;
 
     public int getTotalFitness() {
         return totalFitness;
@@ -16,16 +17,16 @@ public class Fitness implements Comparable<Fitness> {
         this.totalFitness = totalFitness;
     }
 
-    public Set<Point> getPoints() {
+    public List<Pair<Point, Point>> getPoints() {
         return points;
     }
 
-    public void setPoints(HashSet<Point> points) {
+    public void setPoints(List<Pair<Point, Point>> points) {
         this.points = points;
     }
 
 
-    public Fitness(int totalFitness, HashSet<Point> points) {
+    public Fitness(int totalFitness, List<Pair<Point, Point>> points) {
         this.totalFitness = totalFitness;
         this.points = points;
     }

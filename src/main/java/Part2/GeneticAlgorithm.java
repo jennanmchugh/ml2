@@ -3,6 +3,7 @@ package Part2;
 import Part2.enums.Direction;
 import Part2.io.ProteinReader;
 import Part2.models.*;
+import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ public class GeneticAlgorithm  {
         OR
         2.) is i == the maximum fitness level?
          */
-        for (int i = 0; i < MAX_GENERATIONS && i < MAX_FITNESS; i++) {
+        for (int i = 0; i < MAX_GENERATIONS; i++) {
             //take the 1st 10 elements of Gen. 1 (bc they have the highest fitness value) for elitism.
             for (int j = 0; j < 10; j++) {
                 nextGen[j] = firstGen[j];
@@ -75,6 +76,9 @@ public class GeneticAlgorithm  {
             computeFitness(population);
             Arrays.sort(nextGen);
             bestGenStructures.add(nextGen[0]);
+            if (nextGen[0].getFitness().getTotalFitness() == 9) {
+                break;
+            }
         }
 
         return bestGenStructures;
@@ -101,7 +105,7 @@ public class GeneticAlgorithm  {
             randomOrientation(i, protein.getSequence().get(i).getLetter(), nodes, visited);
         }
 
-        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), new Fitness(0, new HashSet<Point>()), nodes, visited);
+        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), new Fitness(0, new ArrayList<>()), nodes, visited);
     }
 
     /**
@@ -164,6 +168,7 @@ public class GeneticAlgorithm  {
     private static void computeFitness(Population population) {
         for (Structure s : population.getStructures()) {
             int fitness = 0;
+            List<Pair<Point, Point>> bonds = new ArrayList<>();
             //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
             List<StructureNode> hydrophobics = new ArrayList<>();
             for (StructureNode n : s.getNodes()) {
@@ -172,21 +177,27 @@ public class GeneticAlgorithm  {
                 }
             }
             Collections.sort(hydrophobics);
-            HashSet<Point> fitnessBonds = new HashSet<>();
-            for (int i = 0; i < hydrophobics.size()-1; i++) {
-                Point curr = hydrophobics.get(i).getPosition();
-                int currIndex = s.getNodes().indexOf(new StructureNode("h", curr));
-                Point next = hydrophobics.get(i+1).getPosition();
-                int nextIndex = s.getNodes().indexOf(new StructureNode("h", next));
-                //if the distance between our two Hydrophobic acid points is 1, AND these points aren't sequential in the sequence, we have a topological neighbor.
-                if (curr.distance(next) == 1 && (Math.abs(nextIndex - currIndex)  != 1)) {
-                    fitnessBonds.add(curr);
-                    fitnessBonds.add(next);
-                    fitness++;
+            for (int i = 0; i < hydrophobics.size(); i++) {
+                Point current = hydrophobics.get(i).getPosition();
+                int currentIndex = s.getNodes().indexOf(new StructureNode("h", current));
+                for (int j = 0; j < hydrophobics.size(); j++) {
+                    Point compare = hydrophobics.get(j).getPosition();
+                    int compareIndex = s.getNodes().indexOf(new StructureNode("h", compare));
+                    if (i != j) {
+                        if (current.x == compare.x && Math.abs(compareIndex - currentIndex) != 1 && Math.abs(current.y - compare.y) == 1) {
+                            bonds.add(new Pair<>(current, compare));
+                        }
+                        else if (current.y == compare.y && Math.abs(compareIndex - currentIndex) != 1 && Math.abs(current.x - compare.x) == 1) {
+                            bonds.add(new Pair<>(current, compare));
+                        }
+                    }
                 }
             }
+            if (bonds.size() > 0) {
+                fitness = bonds.size() / 2;
+            }
 
-            s.setFitness(new Fitness(fitness, fitnessBonds));
+            s.setFitness(new Fitness(fitness, bonds));
         }
     }
 
@@ -230,7 +241,7 @@ public class GeneticAlgorithm  {
         Structure s = new Structure();
         boolean structureValid = false;
         while (!structureValid) {
-            int randomPosition = new Random().nextInt(structure1.getNodes().size()-2);
+            int randomPosition = new Random().nextInt(structure1.getNodes().size()-3) + 1;
 
             List<StructureNode> nodes = new ArrayList<>();
             for (int i = 0; i < randomPosition; i++) {
@@ -244,7 +255,7 @@ public class GeneticAlgorithm  {
             for (StructureNode n : nodes) {
                 visited.add(n.getPosition());
             }
-            s = new Structure(structure1.getSequence(), new Fitness(0, new HashSet<Point>()), nodes, visited);
+            s = new Structure(structure1.getSequence(), new Fitness(0, new ArrayList<Pair<Point, Point>>()), nodes, visited);
             structureValid = validateStructure(s, randomPosition);
         }
 

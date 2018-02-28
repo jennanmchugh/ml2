@@ -38,7 +38,7 @@ public class StartProgram extends Application {
                 final NumberAxis yAxis = new NumberAxis(-20, 20, 1);
                 final LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
                 lineChart.setAxisSortingPolicy(LineChart.SortingPolicy.NONE);
-                lineChart.setTitle("Generation: 1 | Sequence: " + genStructures.get(i).getSequence() + " | Fitness: " + genStructures.get(i).getFitness().getTotalFitness());
+                lineChart.setTitle("Generation: "+i+" | Sequence: " + genStructures.get(i).getSequence() + " | Fitness: " + genStructures.get(i).getFitness().getTotalFitness());
                 XYChart.Series series = new XYChart.Series();
                 for (StructureNode n : genStructures.get(i).getNodes()) {
                     series.getData().add(new XYChart.Data<>(n.getPosition().getX(), n.getPosition().getY()));
@@ -84,7 +84,7 @@ public class StartProgram extends Application {
                 Color c = Color.BLACK;
                 String rgb = String.format("%d, %d, %d", (int)(c.getRed() * 255), (int)(c.getGreen() * 255), (int)(c.getBlue() * 255));
                 line.setStyle("-fx-stroke: rgba(" + rgb + " , 1.0);");
-                primaryStage.setTitle("Line chart drawing.");
+                primaryStage.setTitle("CSCI 6990 Spring 2018 Program 1");
                 primaryStage.setScene(scene);
                 primaryStage.show();
             }
