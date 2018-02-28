@@ -33,7 +33,6 @@ public class GeneticAlgorithm  {
 
         Structure[] firstGen = new Structure[200];
         //our initial input is the 4th index element in the proteins input file.
-        Protein p = proteins.get(4);
         for (int i = 0; i < 200; i++) {
             Structure s = selfAvoidingWalk(proteins.get(4));
             firstGen[i] = s;
@@ -66,15 +65,13 @@ public class GeneticAlgorithm  {
                 //mutate
             }
             //choose randomly for the rest of the population
-            for (int j = 180; j < 200; j++) {
+            for (int j = 170; j < 200; j++) {
                 nextGen[j] = firstGen[new Random().nextInt(firstGen.length)];
             }
             population = new Population(nextGen);
             computeFitness(population);
             Arrays.sort(nextGen);
             bestGenStructures.add(nextGen[0]);
-            //let's see if we can make it here without it breaking
-            System.out.println("we made it yall");
         }
 
         return bestGenStructures;
@@ -99,11 +96,6 @@ public class GeneticAlgorithm  {
         //start i counter at 2 since we have already set the values for positions 0 & 1.
         for (int i = 2; i < protein.getSequence().size(); i++) {
             randomOrientation(i, protein.getSequence().get(i).getLetter(), nodes, visited);
-        }
-
-        logger.info("Moves: ");
-        for (StructureNode n : nodes) {
-            logger.info(n.getAminoAcid() + " (" + n.getPosition().getX() + "," + n.getPosition().getY() + ")");
         }
 
         return new Structure(protein.getFormattedSequenceString(protein.getSequence()), new Fitness(0, new HashSet<Point>()), nodes, visited);
@@ -179,7 +171,6 @@ public class GeneticAlgorithm  {
             Collections.sort(hydrophobics);
             HashSet<Point> fitnessBonds = new HashSet<>();
             for (int i = 0; i < hydrophobics.size()-1; i++) {
-                logger.info("("+hydrophobics.get(i).getPosition().getX()+","+hydrophobics.get(i).getPosition().getY()+")");
                 Point curr = hydrophobics.get(i).getPosition();
                 int currIndex = s.getNodes().indexOf(new StructureNode("h", curr));
                 Point next = hydrophobics.get(i+1).getPosition();
@@ -236,7 +227,7 @@ public class GeneticAlgorithm  {
         Structure s = new Structure();
         boolean structureValid = false;
         while (!structureValid) {
-            int randomPosition = new Random().nextInt(structure1.getNodes().size());
+            int randomPosition = new Random().nextInt(structure1.getNodes().size()-2);
 
             List<StructureNode> nodes = new ArrayList<>();
             for (int i = 0; i < randomPosition; i++) {
@@ -251,18 +242,17 @@ public class GeneticAlgorithm  {
                 visited.add(n.getPosition());
             }
             s = new Structure(structure1.getSequence(), new Fitness(0, new HashSet<Point>()), nodes, visited);
-            structureValid = validateStructure(s);
+            structureValid = validateStructure(s, randomPosition);
         }
-
-        logger.debug("WE MADE IT!!!");
 
         return s;
     }
 
-    private static boolean validateStructure(Structure structure) {
+    private static boolean validateStructure(Structure structure, int index) {
         List<StructureNode> nodes = structure.getNodes();
-        for (int i = 0; i < nodes.size()-1; i++) {
-            if (nodes.get(i).getPosition().distance(nodes.get(i+1).getPosition()) != 1) {
+        //compare the point at the random point and the point afterwords. if their distance is not == 1, the structure isn't valid.
+        if (index > 0) {
+            if (nodes.get(index-1).getPosition().distance(nodes.get(index).getPosition()) != 1) {
                 return false;
             }
         }
