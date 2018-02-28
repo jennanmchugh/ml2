@@ -7,3 +7,9 @@
 <p>Part 2 is where things get fun. </p>
 <p>Go to <code>src/main/java/Part 2/fx</code> and run <code>StartProgram.java</code>. Soon a Java FX application will open and you will see a 'best-fit' structure drawn for each generation. The generation number and total fitness will appear at the top, along with the sequence string. </p>
 
+Global Static Variables 
+-----------------------
+Name            | Value
+-------------   | -----
+MAX_FITNESS     | -9
+MAX_GENERATIONS | 2000
