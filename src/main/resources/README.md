@@ -1,5 +1,8 @@
 **<h1>Program 1 Instructions</h1>**
 
+**<h2>To get to the program</h2>**
+<p>Unzip Program1.zip and open 'program1' in Eclipse or IntelliJ.</p>
+
 **<h2>Part 1</h2>**
 <p>Part 1, the Hill-climbing algorithm assignment, is a simple console program. To run it, just open <code>src/main/java/Part 1</code> and run <code>HillClimber.java</code>. Results will print in the console.</p>
 

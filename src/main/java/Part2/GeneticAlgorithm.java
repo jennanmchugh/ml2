@@ -76,7 +76,7 @@ public class GeneticAlgorithm  {
             computeFitness(population);
             Arrays.sort(nextGen);
             bestGenStructures.add(nextGen[0]);
-            if (nextGen[0].getFitness().getTotalFitness() == 9) {
+            if (nextGen[0].getFitness().getTotalFitness() == MAX_FITNESS) {
                 break;
             }
         }
@@ -100,36 +100,21 @@ public class GeneticAlgorithm  {
         nodes.add(new StructureNode(protein.getSequence().get(1).getLetter(), new Point(1, 0)));
         visited.add(new Point(1, 0));
 
-        //start i counter at 2 since we have already set the values for positions 0 & 1.
-        for (int i = 2; i < protein.getSequence().size(); i++) {
-            randomOrientation(i, protein.getSequence().get(i).getLetter(), nodes, visited);
-        }
+        int i = 2;
+        while (i < protein.getSequence().size()) {
+            Point curr = nodes.get(nodes.size()-1).getPosition();
 
-        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), new Fitness(0, new ArrayList<>()), nodes, visited);
-    }
-
-    /**
-     * This is where our self-avoiding walk magic is actually happening.
-     * @param moveNum Our index position in the structure
-     * @param acid The letter representing the current acid - H for hydrophobic, P for hydrophilic/polar
-     * @param nodes The structure nodes that have been added so far to the structure
-     * @param visited All the points that have been visited.
-     */
-    private static void randomOrientation(int moveNum, String acid, List<StructureNode> nodes, List<Point> visited) {
-        //check prev position
-        Point curr = nodes.get(nodes.size()-1).getPosition();
-
-        //all adjacent points to the previous point.
-        List<Point> possibleMoves = new ArrayList<>();
-        Point nextRight = addPoints(curr, Direction.RIGHT.getPoint());
-        Point nextLeft = addPoints(curr, Direction.LEFT.getPoint());
-        Point nextUp = addPoints(curr, Direction.UP.getPoint());
-        Point nextDown = addPoints(curr, Direction.DOWN.getPoint());
-        //if this point hasn't been visited yet, we can add it to our possible moves.
-        if (!visited.contains(nextRight)) { possibleMoves.add(nextRight); }
-        if (!visited.contains(nextLeft)) { possibleMoves.add(nextLeft); }
-        if (!visited.contains(nextUp)) { possibleMoves.add(nextUp); }
-        if (!visited.contains(nextDown)) { possibleMoves.add(nextDown); }
+            //all adjacent points to the previous point.
+            List<Point> possibleMoves = new ArrayList<>();
+            Point nextRight = addPoints(curr, Direction.RIGHT.getPoint());
+            Point nextLeft = addPoints(curr, Direction.LEFT.getPoint());
+            Point nextUp = addPoints(curr, Direction.UP.getPoint());
+            Point nextDown = addPoints(curr, Direction.DOWN.getPoint());
+            //if this point hasn't been visited yet, we can add it to our possible moves.
+            if (!visited.contains(nextRight)) { possibleMoves.add(nextRight); }
+            if (!visited.contains(nextLeft)) { possibleMoves.add(nextLeft); }
+            if (!visited.contains(nextUp)) { possibleMoves.add(nextUp); }
+            if (!visited.contains(nextDown)) { possibleMoves.add(nextDown); }
 
         /*
         occasionally we will run into an issue where the points in each direction from the current point have already been visited.
@@ -140,26 +125,38 @@ public class GeneticAlgorithm  {
             We have no possible moves. In the while loop, we remove (4,0) from the nodes and visited list. Then we get the point at the previous position and get all points in the same direction.
             All points that haven't been visited yet & aren't equal to (4,0) are added to the possible moves.
          */
-        while (possibleMoves.size() == 0) {
-            Point current = nodes.get(nodes.size()-1).getPosition();
-            visited.remove(current);
-            boolean removed = nodes.removeIf(n -> n.getPosition().equals(current));
-            Point prev = nodes.get(nodes.size()-2).getPosition();
-            Point right = addPoints(prev, Direction.RIGHT.getPoint());
-            Point left = addPoints(prev, Direction.LEFT.getPoint());
-            Point up = addPoints(prev, Direction.UP.getPoint());
-            Point down = addPoints(prev, Direction.DOWN.getPoint());
-            if ( right.getX() != curr.getX() && right.getY() != curr.getY() && !visited.contains(right)) { possibleMoves.add(right); }
-            if (left.getX() != curr.getX() && left.getY() != curr.getY() && !visited.contains(left)) { possibleMoves.add(left); }
-            if (up.getX() != curr.getX() && up.getY() != curr.getY() && !visited.contains(up)) { possibleMoves.add(up); }
-            if (down.getX() != curr.getX() && down.getY() != curr.getY() && !visited.contains(down)) { possibleMoves.add(down); }
+            while (possibleMoves.size() == 0) {
+                Point current = nodes.get(nodes.size()-1).getPosition();
+                visited.remove(current);
+                boolean removed = nodes.removeIf(n -> n.getPosition().equals(current));
+                if (removed) {
+                    Point prev = nodes.get(nodes.size()-1).getPosition();
+                    Point right = addPoints(prev, Direction.RIGHT.getPoint());
+                    Point left = addPoints(prev, Direction.LEFT.getPoint());
+                    Point up = addPoints(prev, Direction.UP.getPoint());
+                    Point down = addPoints(prev, Direction.DOWN.getPoint());
+                    if (!right.equals(current) && !visited.contains(right)) { possibleMoves.add(right); }
+                    if (!left.equals(current) && !visited.contains(left)) { possibleMoves.add(left); }
+                    if (!up.equals(current) && !visited.contains(up)) { possibleMoves.add(up); }
+                    if (!down.equals(current) && !visited.contains(down)) { possibleMoves.add(down); }
+                    i--;
+                }
+                else {
+                    logger.error("error removing point (" + current.getX() + "," + current.getY() +")");
+                    System.exit(0);
+                }
+            }
+
+            if (possibleMoves.size() > 0) {
+                Point next = possibleMoves.get(new Random().nextInt(possibleMoves.size()));
+                nodes.add(new StructureNode(protein.getSequence().get(i).getLetter(), next));
+                visited.add(next);
+                i++;
+            }
         }
 
-        Point next = possibleMoves.get(new Random().nextInt(possibleMoves.size()));
-        nodes.add(new StructureNode(acid, next));
-        visited.add(next);
+        return new Structure(protein.getFormattedSequenceString(protein.getSequence()), new Fitness(0, new ArrayList<>()), nodes, visited);
     }
-
 
     /**
      * Computes fitness value of structureNode. This number is also known as "topological neighbors" (TN): the number of neighboring H-H contacts where the
@@ -167,7 +164,7 @@ public class GeneticAlgorithm  {
      */
     private static void computeFitness(Population population) {
         for (Structure s : population.getStructures()) {
-            int fitness = 0;
+            int fitness;
             List<Pair<Point, Point>> bonds = new ArrayList<>();
             //For fitness, we only care about H-H bonds. So let's start with grabbing only the hydrophobic structureNodes from the structureNode.
             List<StructureNode> hydrophobics = new ArrayList<>();
@@ -184,18 +181,15 @@ public class GeneticAlgorithm  {
                     Point compare = hydrophobics.get(j).getPosition();
                     int compareIndex = s.getNodes().indexOf(new StructureNode("h", compare));
                     if (i != j) {
-                        if (current.x == compare.x && Math.abs(compareIndex - currentIndex) != 1 && Math.abs(current.y - compare.y) == 1) {
-                            bonds.add(new Pair<>(current, compare));
-                        }
-                        else if (current.y == compare.y && Math.abs(compareIndex - currentIndex) != 1 && Math.abs(current.x - compare.x) == 1) {
-                            bonds.add(new Pair<>(current, compare));
+                        if ((current.x == compare.x && Math.abs(compareIndex - currentIndex) != 1 && Math.abs(current.y - compare.y) == 1) || (current.y == compare.y && Math.abs(compareIndex - currentIndex) != 1 && Math.abs(current.x - compare.x) == 1 )) {
+                            if (!bonds.contains(new Pair<>(current, compare)) && !bonds.contains(new Pair<>(compare, current))) {
+                                bonds.add(new Pair<>(current, compare));
+                            }
                         }
                     }
                 }
             }
-            if (bonds.size() > 0) {
-                fitness = bonds.size() / 2;
-            }
+            fitness = bonds.size();
 
             s.setFitness(new Fitness(fitness, bonds));
         }
@@ -241,33 +235,35 @@ public class GeneticAlgorithm  {
         Structure s = new Structure();
         boolean structureValid = false;
         while (!structureValid) {
-            int randomPosition = new Random().nextInt(structure1.getNodes().size()-3) + 1;
-
             List<StructureNode> nodes = new ArrayList<>();
-            for (int i = 0; i < randomPosition; i++) {
-                nodes.add(structure1.getNodes().get(i));
-            }
-            for (int i = randomPosition; i < structure2.getNodes().size(); i++) {
-                nodes.add(structure2.getNodes().get(i));
+            List<Point> visited = new ArrayList<>();
+            int randomPosition = new Random().nextInt(structure1.getNodes().size()-3) + 1;
+            if (structure1.getNodes().get(randomPosition-1).getPosition().distance(structure2.getNodes().get(randomPosition).getPosition()) == 1) {
+                for (int i = 0; i < randomPosition; i++) {
+                    nodes.add(structure1.getNodes().get(i));
+                    visited.add(nodes.get(i).getPosition());
+                }
+                for (int i = randomPosition; i < structure2.getNodes().size(); i++) {
+                    nodes.add(structure2.getNodes().get(i));
+                    visited.add(nodes.get(i).getPosition());
+                }
+
+                s = new Structure(structure1.getSequence(), new Fitness(0, new ArrayList<>()), nodes, visited);
+                structureValid = validateStructure(s, randomPosition, structure1, structure2);
             }
 
-            List<Point> visited = new ArrayList<>();
-            for (StructureNode n : nodes) {
-                visited.add(n.getPosition());
-            }
-            s = new Structure(structure1.getSequence(), new Fitness(0, new ArrayList<Pair<Point, Point>>()), nodes, visited);
-            structureValid = validateStructure(s, randomPosition);
         }
 
         return s;
     }
 
-    private static boolean validateStructure(Structure structure, int index) {
-        List<StructureNode> nodes = structure.getNodes();
-        //compare the point at the random point and the point afterwords. if their distance is not == 1, the structure isn't valid.
-        if (index > 0) {
-            if (nodes.get(index-1).getPosition().distance(nodes.get(index).getPosition()) != 1) {
-                return false;
+    private static boolean validateStructure(Structure structure, int index, Structure parent1, Structure parent2) {
+        for (int i = index; i < parent2.getNodes().size(); i++) {
+            for (int j = 0; j < index; j++) {
+                if (parent1.getVisitedPoints().get(j).equals(parent2.getNodes().get(i).getPosition())) {
+                    //this point has already been visited in the first half from parent 1.
+                    return false;
+                }
             }
         }
 
