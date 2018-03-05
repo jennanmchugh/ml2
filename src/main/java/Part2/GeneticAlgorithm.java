@@ -64,10 +64,6 @@ public class GeneticAlgorithm  {
                 Structure structure2 = rouletteWheelSelection(firstGen);
                 nextGen[j] = crossOver(structure1, structure2);
             }
-            //apply mutation to the next 10 chromosomes
-            for (int j = 170; j < 180; j++) {
-                //mutate
-            }
             //choose randomly for the rest of the population
             for (int j = 170; j < 200; j++) {
                 nextGen[j] = firstGen[new Random().nextInt(firstGen.length)];
@@ -228,8 +224,6 @@ public class GeneticAlgorithm  {
         return null;
     }
 
-    private static void mutate(Structure structure) {
-    }
 
     private static Structure crossOver(Structure structure1, Structure structure2) {
         Structure s = new Structure();
