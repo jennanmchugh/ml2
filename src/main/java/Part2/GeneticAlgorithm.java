@@ -1,8 +1,11 @@
 package Part2;
 
 import Part2.enums.Direction;
+import Part2.fx.DrawingTask;
 import Part2.io.ProteinReader;
 import Part2.models.*;
+import javafx.application.Platform;
+import javafx.scene.chart.LineChart;
 import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,15 +18,31 @@ import java.util.List;
 /**
  * Created on 02/20/18 by Jenna McHugh.
  */
-public class GeneticAlgorithm  {
+public class GeneticAlgorithm {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithm.class);
     private static Population population;
+    private Structure struct = null;
+    private LineChart<Number, Number> lineChart;
+    private static List<Structure> structures;
     private static final int MAX_GENERATIONS = 2000;
-
     private static final int MAX_FITNESS = 9;
 
-    public static void main(String[] args) {
-        start();
+    public GeneticAlgorithm() {
+        if (structures == null) {
+            structures = start();
+        }
+    }
+
+    public GeneticAlgorithm(Structure struct, LineChart<Number, Number> lineChart) {
+        if (structures == null) {
+            structures = start();
+        }
+        this.struct = struct;
+        this.lineChart = lineChart;
+    }
+
+    public List<Structure> getStructures() {
+        return structures;
     }
 
     /**

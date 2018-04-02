@@ -13,6 +13,7 @@ public class HillClimber {
 
     public static void main (String[] args) {
         int t = 0;
+        int[] maxValues = new int[100];
         while (t!=MAX) {
             local = false;
             String vc = buildRandomBitString(40);
@@ -31,17 +32,24 @@ public class HillClimber {
                 }
                 String vn = maxEntry.getKey();
                 int fVn = getFunctionValue(vn);
+                maxValues[t] = fVn;
                 if (fVc < fVn) {
                     vc = vn;
                     fVc = getFunctionValue(vc);
                 }
                 else {
                     local = true;
-                    System.out.println("LOCAL = TRUE");
                 }
             }
             t++;
-            System.out.println("t = " + t);
+        }
+        for (int i = 0; i < maxValues.length; i++) {
+            if (i < maxValues.length-1) {
+                System.out.print(maxValues[i] + ",");
+            }
+            else {
+                System.out.println(maxValues[i]);
+            }
         }
     }
 
@@ -92,11 +100,11 @@ public class HillClimber {
             neighborStrings.add(sb.toString());
         }
 
-        System.out.println("String vc is currently = " + vc);
-        System.out.println("40 neighbor strings for vc =");
-        for (String s : neighborStrings) {
-            System.out.println(s);
-        }
+//        System.out.println("String vc is currently = " + vc);
+//        System.out.println("40 neighbor strings for vc =");
+//        for (String s : neighborStrings) {
+//            System.out.println(s);
+//        }
 
         return neighborStrings;
     }
